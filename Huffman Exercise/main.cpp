@@ -1,5 +1,5 @@
-#include "encoder.h"
-#include "decoder.h"
+#include "Encoder.h"
+#include "Decoder.h"
 #include <string>
 #include <iostream>
 

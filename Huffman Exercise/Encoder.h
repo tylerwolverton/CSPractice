@@ -3,20 +3,17 @@
 
 class Encoder {
 public:
-	/*Encoder();
-	~Encoder();*/
-
 	static bool Encode(std::string inFilePath, std::string outFilePath);
 
 private:
     class TreeNode {
     public:
-        char byteVal;
+        unsigned char byteVal;
         int frequency;
         std::shared_ptr<TreeNode> left;
         std::shared_ptr<TreeNode> right;
 
-        TreeNode(char p_byteVal, 
+        TreeNode(unsigned char p_byteVal,
                  int p_frequency, 
                  std::shared_ptr<TreeNode> p_left = nullptr, 
                  std::shared_ptr<TreeNode> p_right = nullptr)
@@ -35,8 +32,13 @@ private:
             : count(p_count),
               bitRep(p_bitRep) {}
     };
+    typedef std::shared_ptr<std::unordered_map<char, Encoder::FrequencyNode>> FreqTablePtr;
 
-    static std::shared_ptr<std::unordered_map<char, FrequencyNode>> buildFrequencyTable(std::string inFilePath);
-    static std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(std::shared_ptr<std::unordered_map<char, Encoder::FrequencyNode>> freqTablePtr);
+    static FreqTablePtr buildFrequencyTable(std::string inFilePath);
+    static std::shared_ptr<Encoder::TreeNode> buildFrequencyTree(FreqTablePtr freqTable);
+    static void saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, FreqTablePtr freqTable);
+    static bool writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath);
+    static void buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<std::string> treeStrPtr);
+    static bool writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable);
     static void printTree(std::shared_ptr<TreeNode> root);
 };
