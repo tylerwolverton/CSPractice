@@ -1,5 +1,8 @@
 #include <string>
 #include <unordered_map>
+#include <memory>
+
+//class TreeNode;
 
 class Encoder {
 public:
@@ -37,8 +40,8 @@ private:
     static FreqTablePtr buildFrequencyTable(std::string inFilePath);
     static std::shared_ptr<Encoder::TreeNode> buildFrequencyTree(FreqTablePtr freqTable);
     static void saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, FreqTablePtr freqTable);
-    static bool writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath);
+    static std::streampos writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath);
     static void buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<std::string> treeStrPtr);
-    static bool writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable);
+    static bool writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable, std::streampos bytesWritten);
     static void printTree(std::shared_ptr<TreeNode> root);
 };

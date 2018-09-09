@@ -6,6 +6,7 @@
 int main() 
 {
     Encoder::Encode("./Test.txt", "./EncodedTest.txt");
+    Decoder::Decode("./EncodedTest.txt", "./DecodedTest.txt");
 
 	return 0;
 }

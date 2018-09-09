@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <memory>
 
 bool Encoder::Encode(std::string inFilePath, std::string outFilePath) 
 {
@@ -30,10 +29,10 @@ bool Encoder::Encode(std::string inFilePath, std::string outFilePath)
         std::cout << "byte: " << it->first << " bit rep: " << it->second.bitRep << std::endl;
     }
 	// write tree into start of file                time: O((n^2)/2)
-    writeTreeToFile(root, outFilePath);
+    std::streampos bytesWritten = writeTreeToFile(root, outFilePath);
 
 	// write out compressed bits to new file        time: O(n)
-    writeDataToFile(inFilePath, outFilePath, freqTable);
+    writeDataToFile(inFilePath, outFilePath, freqTable, bytesWritten);
     return true;
 }
 
@@ -131,7 +130,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
         }
 
         //TreeNode newNode('\0', min + secondMin, minNode, secondMinNode);
-        nodeList.push_back(std::make_shared<TreeNode>('\|', min + secondMin, minNode, secondMinNode));
+        nodeList.push_back(std::make_shared<TreeNode>('\0', min + secondMin, minNode, secondMinNode));
         nodeList.remove(minNode);
         nodeList.remove(secondMinNode);
     }
@@ -160,7 +159,7 @@ void Encoder::saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, Fr
     }
 }
 
-bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath)
+std::streampos Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath)
 {
     std::shared_ptr<std::string> treeStrPtr = std::make_shared<std::string>();
     buildTreeString(node, treeStrPtr);
@@ -174,10 +173,10 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     {
         outfile.write((*treeStrPtr).c_str(), (*treeStrPtr).size());
         outfile.write("\\!", sizeof("\\!"));
-        return true;
+        return (*treeStrPtr).size();
     }
 
-    return false;
+    return 0;
 }
 
 void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<std::string> treeStrPtr)
@@ -190,10 +189,19 @@ void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<st
     {
         buildTreeString(node->right, treeStrPtr);
     }
-    (*treeStrPtr) += node->byteVal;
+
+    if (node->byteVal == '\0')
+    {
+        (*treeStrPtr) += '\\';
+        (*treeStrPtr) += '|';
+    }
+    else
+    {
+        (*treeStrPtr) += node->byteVal;
+    }
 }
 
-bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable)
+bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable, std::streampos bytesWritten)
 {
     // read file into memory
     std::ifstream inFile(inFilePath, std::ios::binary | std::ios::ate);
@@ -205,13 +213,17 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     }
 
     std::ofstream outfile;
-    outfile.open(outFilePath, std::ios::out | std::ios::binary);
+    outfile.open(outFilePath, std::ios::out | std::ios::binary | std::ios::ate | std::ios::app);
 
     std::streampos maxReadSize = 2048;
     std::streampos fileSize = inFile.tellg();
     inFile.seekg(0, std::ios::beg);
 
     std::streampos totalBytesRead = 0;
+    char byteToWrite = 0;
+    int bitsRead = 0;
+    // TODO: Support variable byte size
+    const int BIT_COUNT = 8;
     while (totalBytesRead < fileSize)
     {
         std::streampos readChunkSize = maxReadSize;
@@ -226,26 +238,20 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         inFile.read(memblock, readChunkSize);
         totalBytesRead += readChunkSize;
 
-        char byteToWrite = 0;
-        int bitsRead = 0;
-        // TODO: Support variable byte size
-        const int BIT_COUNT = 8;
-        std::string leftover = "";
         // write each bit to file in 1 byte chunks
         for (int i = 0; i < readChunkSize; i++)
         {
             auto it = freqTable->find(memblock[i]);
-            leftover += it->second.bitRep;
-            std::cout << "processing leftover: " << leftover << std::endl;
-            for (char bit : leftover)
+            std::cout << "processing bit string: " << it->second.bitRep << std::endl;
+            for (char bit : it->second.bitRep)
             {
-
                 if (bitsRead == BIT_COUNT)
                 {
+					std::cout << "byteToWrite: " << byteToWrite << std::endl;
                     outfile.write(&byteToWrite, 1);
                     byteToWrite = 0;
                     bitsRead = 0;
-                    std::cout << "writing byte" << std::endl;
+                    //std::cout << "writing byte" << std::endl;
                 }
 
                 byteToWrite <<= 1;
@@ -256,13 +262,23 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
 
                 ++bitsRead;
             }
-
-            leftover = "";
         }
 
         delete[] memblock;
     }
 
+    // Write out any remaining bits
+    if (bitsRead != 0)
+    {
+        for (int i = 0; i < BIT_COUNT - bitsRead; i++)
+        {
+            byteToWrite <<= 1;
+        }
+		std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
+    
+        outfile.write(&byteToWrite, 1);
+    }
+    
     inFile.close();
     outfile.close();
 
