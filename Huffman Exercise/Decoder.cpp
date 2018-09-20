@@ -8,14 +8,17 @@ bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
 {
     // Build tree from file
         // Read in tree from file
+	std::cout << "Reading Tree from File\n";
     std::shared_ptr<TreeNode> root = std::make_shared<TreeNode>('!');
     std::streampos bytesRead = buildDataTree(inFilePath, root);
 
     printTree(root);
 
     // Read the remainder of the file and build output file
+	std::cout << "Reading Remainder of File\n";
     buildOutputFile(inFilePath, outFilePath, root, bytesRead);
 
+	std::cout << "Decoding Complete\n";
     return true;
 }
 
@@ -67,7 +70,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
                 // Add a slash leaf node since last one we saw isn't escape character
                 if (seenSlash)
                 {
-                    std::cout << "Seen slash\n";
+                    //std::cout << "Seen slash\n";
                     nodeStack.push(std::make_shared<TreeNode>('\\'));
                 }
                 seenSlash = true;
@@ -84,7 +87,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
                     // Internal node seen
                     else if (memblock[i] == '|')
                     {
-                        std::cout << "Adding internal node\n";
+                        //std::cout << "Adding internal node\n";
                         auto node1 = nodeStack.top();
                         nodeStack.pop();
                         auto node2 = nodeStack.top();
@@ -95,7 +98,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
                 // Add new leaf node
                 else
                 {
-                    std::cout << "Adding leaf: " << memblock[i] << std::endl;
+                    //std::cout << "Adding leaf: " << memblock[i] << std::endl;
                     nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
                 }
                 
@@ -122,7 +125,7 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
         return;
     }
 
-    std::cout << "bytesRead: " <<bytesRead << "\n";
+    //std::cout << "bytesRead: " <<bytesRead << "\n";
 
     std::ofstream outfile;
     outfile.open(outFilePath, std::ios::out | std::ios::binary);
@@ -150,14 +153,14 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
         // write each byte to file
         for (int i = 0; i < readChunkSize; i++)
         {
-            std::cout << "Processing byte\n";
+            //std::cout << "Processing byte\n";
             for (int j = 7; j >= 0; j--)
             {
                 //int mask = 1 << j;
 				//std::cout << "mask: " << mask << std::endl;
                 //int bit = atoi(&(memblock[i])) & (mask);
 				auto bit = (memblock[i] >> j) & 1;
-				std::cout << "bit: " << bit << std::endl;
+				//std::cout << "bit: " << bit << std::endl;
 				if (bit == 0)
                 {
                     curNode = curNode->left;

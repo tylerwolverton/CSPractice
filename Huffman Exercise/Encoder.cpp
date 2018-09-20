@@ -9,30 +9,41 @@ bool Encoder::Encode(std::string inFilePath, std::string outFilePath)
     std::cout << "Building Frequency Table\n";
 	FreqTablePtr freqTable = buildFrequencyTable(inFilePath);
 
-    for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
+	if (freqTable == nullptr)
+	{
+		return false;
+	}
+
+    /*for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
         std::cout << "byte: " << it->first << " count: " << it->second.count << std::endl;
-    }
+    }*/
 
 	// assign bit sequence to each char  
         // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars from this point on
         // build tree                               time: O((n^2)/2) space: O((n^2)/2)
+	std::cout << "Building Frequency Tree\n";
     std::shared_ptr<TreeNode> root = buildFrequencyTree(freqTable);
 
-    printTree(root);
+    //printTree(root);
 
 	// store the bit representation of each leaf    hash table: time O(nlogn) space: none if reuse frequency table
+	std::cout << "Saving Bit Representations\n";
     saveBitReps(root, "", freqTable);
 
-    for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
+    /*for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
         std::cout << "byte: " << it->first << " bit rep: " << it->second.bitRep << std::endl;
-    }
+    }*/
 	// write tree into start of file                time: O((n^2)/2)
-    std::streampos bytesWritten = writeTreeToFile(root, outFilePath);
+	std::cout << "Writing Tree to File\n";
+    writeTreeToFile(root, outFilePath);
 
 	// write out compressed bits to new file        time: O(n)
-    writeDataToFile(inFilePath, outFilePath, freqTable, bytesWritten);
+	std::cout << "Writing Bits to File\n";
+    writeDataToFile(inFilePath, outFilePath, freqTable);
+
+	std::cout << "Finished Encoding\n";
     return true;
 }
 
@@ -50,12 +61,20 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
     FreqTablePtr freqTable = std::make_shared<std::unordered_map<char, FrequencyNode> >();
     std::streampos maxReadSize = 2048;
     std::streampos fileSize = inFile.tellg();
+
+	if (fileSize < 2)
+	{
+		std::cout << "File is too small to benefit from compression\n";
+		return nullptr;
+	}
+
     inFile.seekg(0, std::ios::beg);
 
 	std::streampos totalBytesRead = 0;
     //std::vector<unsigned char> memblock;
 	while (totalBytesRead < fileSize)
 	{
+		std::cout << "Processing chunk\n";
         std::streampos readChunkSize = maxReadSize;
 		if (fileSize - totalBytesRead < readChunkSize)
 		{
@@ -102,6 +121,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
     std::list<std::shared_ptr<TreeNode>> nodeList;
     for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
+		std::cout << "Pushing node\n";
         nodeList.push_back(std::make_shared<TreeNode>(it->first, it->second.count));
     }
 
@@ -111,26 +131,37 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
     // from the end
     while (nodeList.size() > 1)
     {
-        int min = 9999;
-        int secondMin = 9998;
-        std::shared_ptr<TreeNode> minNode, secondMinNode;
+		std::cout << "Noodles: " << nodeList.size() <<std::endl;
+        int min = 99999998;
+        int secondMin = 99999999;
+        std::shared_ptr<TreeNode> minNode = nullptr, secondMinNode = nullptr;
 
         for (auto node : nodeList)
         {
             if (node->frequency < min)
             {
+				std::cout << "Updating min node: " << node->frequency << std::endl;
+				// Update second min node to be the current min
+				if (minNode != nullptr)
+				{
+					std::cout << "Updating second min node: " << minNode->frequency << std::endl;
+					secondMin = minNode->frequency;
+					secondMinNode = minNode;
+				}
+
+				// Save the new min
                 min = node->frequency;
                 minNode = node;
             }
-            else if (node->frequency < secondMin)
-            {
-                secondMin = node->frequency;
-                secondMinNode = node;
-            }
+			else if (node->frequency < secondMin)
+			{
+				std::cout << "Updating second min node: " << node->frequency << std::endl;
+				secondMin = node->frequency;
+				secondMinNode = node;
+			}
         }
 
-        //TreeNode newNode('\0', min + secondMin, minNode, secondMinNode);
-        nodeList.push_back(std::make_shared<TreeNode>('\0', min + secondMin, minNode, secondMinNode));
+        nodeList.push_back(std::make_shared<TreeNode>('\0', minNode->frequency + secondMinNode->frequency, minNode, secondMinNode));
         nodeList.remove(minNode);
         nodeList.remove(secondMinNode);
     }
@@ -144,7 +175,15 @@ void Encoder::saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, Fr
         && node->right == nullptr)
     {
         auto it = freqTable->find(node->byteVal);
-        it->second.bitRep = bitStr;
+		// If only 1 node is in the list, set its value to 0
+		if (bitStr == "")
+		{
+			it->second.bitRep = "0";
+		}
+		else
+		{
+			it->second.bitRep = bitStr;
+		}
         return;
     }
 
@@ -159,7 +198,7 @@ void Encoder::saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, Fr
     }
 }
 
-std::streampos Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath)
+bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath)
 {
     std::shared_ptr<std::string> treeStrPtr = std::make_shared<std::string>();
     buildTreeString(node, treeStrPtr);
@@ -173,7 +212,7 @@ std::streampos Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::str
     {
         outfile.write((*treeStrPtr).c_str(), (*treeStrPtr).size());
         outfile.write("\\!", sizeof("\\!"));
-        return (*treeStrPtr).size();
+		return 1;// (*treeStrPtr).size() + sizeof("\\!");
     }
 
     return 0;
@@ -201,7 +240,7 @@ void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<st
     }
 }
 
-bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable, std::streampos bytesWritten)
+bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable)
 {
     // read file into memory
     std::ifstream inFile(inFilePath, std::ios::binary | std::ios::ate);
@@ -242,12 +281,12 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         for (int i = 0; i < readChunkSize; i++)
         {
             auto it = freqTable->find(memblock[i]);
-            std::cout << "processing bit string: " << it->second.bitRep << std::endl;
+            //std::cout << "processing bit string: " << it->second.bitRep << std::endl;
             for (char bit : it->second.bitRep)
             {
                 if (bitsRead == BIT_COUNT)
                 {
-					std::cout << "byteToWrite: " << byteToWrite << std::endl;
+					//std::cout << "byteToWrite: " << byteToWrite << std::endl;
                     outfile.write(&byteToWrite, 1);
                     byteToWrite = 0;
                     bitsRead = 0;
@@ -274,7 +313,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         {
             byteToWrite <<= 1;
         }
-		std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
+		//std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
     
         outfile.write(&byteToWrite, 1);
     }
