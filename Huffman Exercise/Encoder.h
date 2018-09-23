@@ -43,5 +43,5 @@ private:
     static bool writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFilePath);
     static void buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<std::string> treeStrPtr);
     static bool writeDataToFile(std::string inFilePath, std::string outFilePath, FreqTablePtr freqTable);
-    static void printTree(std::shared_ptr<TreeNode> root);
+    static void printTree(std::shared_ptr<TreeNode> root, int depth = 0);
 };

@@ -74,7 +74,7 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
     //std::vector<unsigned char> memblock;
 	while (totalBytesRead < fileSize)
 	{
-		std::cout << "Processing chunk\n";
+		//std::cout << "Processing chunk\n";
         std::streampos readChunkSize = maxReadSize;
 		if (fileSize - totalBytesRead < readChunkSize)
 		{
@@ -121,7 +121,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
     std::list<std::shared_ptr<TreeNode>> nodeList;
     for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
-		std::cout << "Pushing node\n";
+		//std::cout << "Pushing node\n";
         nodeList.push_back(std::make_shared<TreeNode>(it->first, it->second.count));
     }
 
@@ -131,7 +131,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
     // from the end
     while (nodeList.size() > 1)
     {
-		std::cout << "Noodles: " << nodeList.size() <<std::endl;
+		//std::cout << "Noodles: " << nodeList.size() <<std::endl;
         int min = 99999998;
         int secondMin = 99999999;
         std::shared_ptr<TreeNode> minNode = nullptr, secondMinNode = nullptr;
@@ -140,11 +140,11 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
         {
             if (node->frequency < min)
             {
-				std::cout << "Updating min node: " << node->frequency << std::endl;
+				//std::cout << "Updating min node: " << node->frequency << std::endl;
 				// Update second min node to be the current min
 				if (minNode != nullptr)
 				{
-					std::cout << "Updating second min node: " << minNode->frequency << std::endl;
+					//std::cout << "Updating second min node: " << minNode->frequency << std::endl;
 					secondMin = minNode->frequency;
 					secondMinNode = minNode;
 				}
@@ -155,7 +155,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
             }
 			else if (node->frequency < secondMin)
 			{
-				std::cout << "Updating second min node: " << node->frequency << std::endl;
+				//std::cout << "Updating second min node: " << node->frequency << std::endl;
 				secondMin = node->frequency;
 				secondMinNode = node;
 			}
@@ -203,7 +203,7 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     std::shared_ptr<std::string> treeStrPtr = std::make_shared<std::string>();
     buildTreeString(node, treeStrPtr);
 
-    std::cout << "treeString: " << *treeStrPtr <<std::endl;
+    //std::cout << "treeString size " << (*treeStrPtr).size() << "  value: " << *treeStrPtr <<"!" <<std::endl;
 
     std::ofstream outfile;
     outfile.open(outFilePath, std::ios::out | std::ios::binary);
@@ -211,7 +211,7 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     if (outfile.is_open())
     {
         outfile.write((*treeStrPtr).c_str(), (*treeStrPtr).size());
-        outfile.write("\\!", sizeof("\\!"));
+        outfile.write("!", sizeof("!"));
 		return 1;// (*treeStrPtr).size() + sizeof("\\!");
     }
 
@@ -229,13 +229,15 @@ void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<st
         buildTreeString(node->right, treeStrPtr);
     }
 
-    if (node->byteVal == '\0')
-    {
-        (*treeStrPtr) += '\\';
-        (*treeStrPtr) += '|';
+    if (node->byteVal == '\0' 
+		&& (node->left != nullptr
+		|| node->right != nullptr))
+	{
+        (*treeStrPtr) += '1';
     }
     else
     {
+		(*treeStrPtr) += '0';
         (*treeStrPtr) += node->byteVal;
     }
 }
@@ -324,12 +326,12 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     return true;
 }
 
-void Encoder::printTree(std::shared_ptr<TreeNode> root)
+void Encoder::printTree(std::shared_ptr<TreeNode> root, int depth)
 {
     if (root == nullptr)
         return;
 
-    std::cout << " | " << root->byteVal << " : " << root->frequency << " |\n";
-    printTree(root->left);
-    printTree(root->right);
+    std::cout << " | " << root->byteVal << " : " << root->frequency << " depth: " <<depth <<" |\n";
+    printTree(root->left, depth + 1);
+    printTree(root->right, depth + 1);
 }

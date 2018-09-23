@@ -12,4 +12,4 @@ audio file
 
 trailing 0's get decoded in output
 
-Change \| to 0 and 1 preceding bits. Commit before
+Change \| to 0 and 1 preceding bits

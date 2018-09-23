@@ -12,7 +12,7 @@ bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
     std::shared_ptr<TreeNode> root = std::make_shared<TreeNode>('!');
     std::streampos bytesRead = buildDataTree(inFilePath, root);
 
-    printTree(root);
+    //printTree(root);
 
     // Read the remainder of the file and build output file
 	std::cout << "Reading Remainder of File\n";
@@ -46,8 +46,9 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 
     std::streampos totalBytesRead = 0;
     int treeBytes = 0;
-    bool seenSlash = false;
-    while (totalBytesRead < fileSize)
+    bool seenPrev0 = false;
+	bool breakWhile = false;
+    while (!breakWhile && totalBytesRead < fileSize)
     {
         std::streampos readChunkSize = maxReadSize;
         if (fileSize - totalBytesRead < readChunkSize)
@@ -62,47 +63,57 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
         // build frequency tree one byte at a time
         for (int i = 0; i < readChunkSize; i++)
         {
-            treeBytes++;
+			treeBytes++;
 
-            // TODO: Fix edge case where a leaf slash comes right before a leaf ! or leaf | in file
-            if (memblock[i] == '\\')
+			// Handle continuation of last chunk
+			if (seenPrev0)
+			{
+				std::cout << "Finishing last chunk\n";
+				nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
+				seenPrev0 = false;
+				continue;
+			}
+
+			//std::cout << "Processing tree byte: " << treeBytes << std::endl;
+            // Leaf node seen
+            if (memblock[i] == '0')
             {
-                // Add a slash leaf node since last one we saw isn't escape character
-                if (seenSlash)
-                {
-                    //std::cout << "Seen slash\n";
-                    nodeStack.push(std::make_shared<TreeNode>('\\'));
-                }
-                seenSlash = true;
+				//std::cout << "Adding leaf node.\n";
+
+				// Handle last byte in chunk
+				if (i + 1 == readChunkSize)
+				{
+					std::cout << "Last byte in chunk\n";
+					seenPrev0 = true;
+					break;
+				}
+
+				// Save leaf node
+				i++;
+				treeBytes++;
+				nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
+				//std::cout << "Leaf node: " << memblock[i] << " NodeStack size: " << nodeStack.size() << std::endl;
             }
+			// Internal node seen
+			else if (memblock[i] == '1')
+			{
+				//std::cout << "Adding internal node. NodeStack size: " << nodeStack.size() << std::endl;
+				auto node1 = nodeStack.top();
+				nodeStack.pop();
+				auto node2 = nodeStack.top();
+				nodeStack.pop();
+				nodeStack.push(std::make_shared<TreeNode>('\0', node2, node1));
+			}
+			else if (memblock[i] == '!')
+			{
+				//std::cout << "End of tree\n";
+				// End of tree seen
+				breakWhile = true;
+				break;
+			}
             else
             {
-                if (seenSlash)
-                {
-                    // End of tree seen
-                    if (memblock[i] == '!')
-                    {
-                        break;
-                    }
-                    // Internal node seen
-                    else if (memblock[i] == '|')
-                    {
-                        //std::cout << "Adding internal node\n";
-                        auto node1 = nodeStack.top();
-                        nodeStack.pop();
-                        auto node2 = nodeStack.top();
-                        nodeStack.pop();
-                        nodeStack.push(std::make_shared<TreeNode>('\0', node2, node1));
-                    }
-                }
-                // Add new leaf node
-                else
-                {
-                    //std::cout << "Adding leaf: " << memblock[i] << std::endl;
-                    nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
-                }
-                
-                seenSlash = false;
+				std::cout << "Unknown byte sequence in tree.\n";
             }
         }
 
