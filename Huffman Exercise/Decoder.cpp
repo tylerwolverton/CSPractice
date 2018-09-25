@@ -167,16 +167,13 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
             //std::cout << "Processing byte\n";
             for (int j = 7; j >= 0; j--)
             {
-                //int mask = 1 << j;
-				//std::cout << "mask: " << mask << std::endl;
-                //int bit = atoi(&(memblock[i])) & (mask);
 				auto bit = (memblock[i] >> j) & 1;
 				//std::cout << "bit: " << bit << std::endl;
-				if (bit == 0)
+				if (bit == 0 && curNode->left != nullptr)
                 {
                     curNode = curNode->left;
                 }
-                else if (bit == 1)
+                else if (bit == 1 && curNode->right != nullptr)
                 {
                     curNode = curNode->right;
                 }
