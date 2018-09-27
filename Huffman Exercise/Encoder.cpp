@@ -15,34 +15,29 @@ bool Encoder::Encode(std::string inFilePath, std::string outFilePath)
 		return false;
 	}
 
-    /*for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
-    {
-        std::cout << "byte: " << it->first << " count: " << it->second.count << std::endl;
-    }*/
-
 	// assign bit sequence to each char  
         // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars from this point on
         // build tree                               time: O((n^2)/2) space: O((n^2)/2)
 	std::cout << "Building Frequency Tree\n";
     std::shared_ptr<TreeNode> root = buildFrequencyTree(freqTable);
 
-    //printTree(root);
-
 	// store the bit representation of each leaf    hash table: time O(nlogn) space: none if reuse frequency table
 	std::cout << "Saving Bit Representations\n";
     saveBitReps(root, "", freqTable);
 
-    /*for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
-    {
-        std::cout << "byte: " << it->first << " bit rep: " << it->second.bitRep << std::endl;
-    }*/
 	// write tree into start of file                time: O((n^2)/2)
 	std::cout << "Writing Tree to File\n";
-    writeTreeToFile(root, outFilePath);
+	if (!writeTreeToFile(root, outFilePath))
+	{
+		return false;
+	}
 
 	// write out compressed bits to new file        time: O(n)
 	std::cout << "Writing Bits to File\n";
-    writeDataToFile(inFilePath, outFilePath, freqTable);
+	if (!writeDataToFile(inFilePath, outFilePath, freqTable))
+	{
+		return false;
+	}
 
 	std::cout << "Finished Encoding\n";
     return true;
@@ -204,8 +199,6 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     std::shared_ptr<std::string> treeStrPtr = std::make_shared<std::string>();
     buildTreeString(node, treeStrPtr);
 
-    //std::cout << "treeString size " << (*treeStrPtr).size() << "  value: " << *treeStrPtr <<"!" <<std::endl;
-
     std::ofstream outfile;
     outfile.open(outFilePath, std::ios::out | std::ios::binary);
 
@@ -213,10 +206,10 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     {
         outfile.write((*treeStrPtr).c_str(), (*treeStrPtr).size());
         outfile.write("!", sizeof("!"));
-		return 1;// (*treeStrPtr).size() + sizeof("\\!");
+		return true;
     }
 
-    return 0;
+    return false;
 }
 
 void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<std::string> treeStrPtr)
@@ -234,11 +227,11 @@ void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<st
 		&& (node->left != nullptr
 		|| node->right != nullptr))
 	{
-        (*treeStrPtr) += '1';
+        (*treeStrPtr) += 'I';
     }
     else
     {
-		(*treeStrPtr) += '0';
+		(*treeStrPtr) += 'L';
         (*treeStrPtr) += node->byteVal;
     }
 }
@@ -251,7 +244,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     if (!inFile.is_open())
     {
         std::cout << "File isn't open\n";
-        return nullptr;
+        return false;
     }
 
     std::ofstream outfile;
@@ -284,16 +277,13 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         for (int i = 0; i < readChunkSize; i++)
         {
             auto it = freqTable->find(memblock[i]);
-            //std::cout << "processing bit string: " << it->second.bitRep << std::endl;
             for (char bit : it->second.bitRep)
             {
                 if (bitsRead == BIT_COUNT)
                 {
-					//std::cout << "byteToWrite: " << byteToWrite << std::endl;
                     outfile.write(&byteToWrite, 1);
                     byteToWrite = 0;
                     bitsRead = 0;
-                    //std::cout << "writing byte" << std::endl;
                 }
 
                 byteToWrite <<= 1;
@@ -313,13 +303,10 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     if (bitsRead != 0)
     {
 		char paddingBits = BIT_COUNT - bitsRead;
-		//std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
         for (int i = 0; i < paddingBits; i++)
         {
-			std::cout << "byte\n";
             byteToWrite <<= 1;
         }
-		//std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
     
         outfile.write(&byteToWrite, 1);
 

@@ -10,17 +10,22 @@ bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
 {
     // Build tree from file
         // Read in tree from file
-	std::cout << "Reading Tree from File\n";
+	std::cout << "Decoding Tree from File\n";
     std::shared_ptr<TreeNode> root = std::make_shared<TreeNode>('!');
     std::streampos bytesRead = buildDataTree(inFilePath, root);
-
-    //printTree(root);
+	if ((int)bytesRead == 0)
+	{
+		return false;
+	}
 
     // Read the remainder of the file and build output file
-	std::cout << "Reading Remainder of File\n";
-    buildOutputFile(inFilePath, outFilePath, root, bytesRead);
+	std::cout << "Decoding Remainder of File\n";
+	if (!buildOutputFile(inFilePath, outFilePath, root, bytesRead))
+	{
+		return false;
+	}
 
-	std::cout << "Decoding Complete\n";
+	std::cout << "Finished Decoding\n";
     return true;
 }
 
@@ -78,7 +83,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 
 			//std::cout << "Processing tree byte: " << treeBytes << std::endl;
             // Leaf node seen
-            if (memblock[i] == '0')
+            if (memblock[i] == 'L')
             {
 				//std::cout << "Adding leaf node.\n";
 
@@ -97,7 +102,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 				//std::cout << "Leaf node: " << memblock[i] << " NodeStack size: " << nodeStack.size() << std::endl;
             }
 			// Internal node seen
-			else if (memblock[i] == '1')
+			else if (memblock[i] == 'I')
 			{
 				//std::cout << "Adding internal node. NodeStack size: " << nodeStack.size() << std::endl;
 				auto node1 = nodeStack.top();
@@ -128,14 +133,14 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 }
 
 
-void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, std::shared_ptr<Decoder::TreeNode> root, std::streampos bytesRead)
+bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, std::shared_ptr<Decoder::TreeNode> root, std::streampos bytesRead)
 {
     std::ifstream inFile(inFilePath, std::ios::binary | std::ios::ate);
 
     if (!inFile.is_open())
     {
         std::cout << "File isn't open\n";
-        return;
+        return false;
     }
 
 	// Read number of padding bits from end of the file
@@ -153,8 +158,6 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
 			paddingBits += std::pow(2, i);
 		}
 	}
-
-    std::cout << "padding bits: " << paddingBits << "\n";
 
     std::ofstream outfile;
     outfile.open(outFilePath, std::ios::out | std::ios::binary);
@@ -211,6 +214,8 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
 
         delete[] memblock;
     }
+
+	return true;
 }
 
 void Decoder::printTree(std::shared_ptr<Decoder::TreeNode> root)

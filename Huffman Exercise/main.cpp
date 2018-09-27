@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
 		// Write temporary encoded file to "<inFile>Encoded"
 		std::size_t ext = inFile.find_last_of(".");
-		std::string tempFile = inFile.substr(0, ext) + "Encoded";// +inFile.substr(ext);
+		std::string tempFile = inFile.substr(0, ext) + "Encoded";
 
 		if (Encoder::Encode(inFile, tempFile))
 		{
@@ -24,15 +24,27 @@ int main(int argc, char* argv[])
 	}
 	else if (argc == 4)
 	{
-		
+		std::string mode = argv[1];
+		inFile = argv[2];
+		outFile = argv[3];
+
+		if (mode == "e")
+		{
+			Encoder::Encode(inFile, outFile);
+		}
+		else if (mode == "d")
+		{
+			Decoder::Decode(inFile, outFile);
+		}
+		else
+		{
+			std::cout << "Usage: Huffman [e|d] <input filepath> <output filepath>\n";
+		}
 	}
 	else
 	{
 		std::cout << "Usage: Huffman [e|d] <input filepath> <output filepath>\n";
 	}
-
-    //Encoder::Encode(inFile, outFile);
-    //Decoder::Decode(inFile, outFile);
 
 	return 0;
 }

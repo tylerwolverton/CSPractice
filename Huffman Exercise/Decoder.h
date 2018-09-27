@@ -22,6 +22,6 @@ private:
     };
 
     static int buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::TreeNode> root);
-    static void buildOutputFile(std::string inFilePath, std::string outFilePath, std::shared_ptr<Decoder::TreeNode> root, std::streampos bytesRead);
+    static bool buildOutputFile(std::string inFilePath, std::string outFilePath, std::shared_ptr<Decoder::TreeNode> root, std::streampos bytesRead);
     static void printTree(std::shared_ptr<TreeNode> root);
 };
