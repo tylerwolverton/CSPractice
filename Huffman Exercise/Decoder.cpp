@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <stack>
+#include <cstdint>
+#include <cmath>
 
 bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
 {
@@ -136,17 +138,34 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
         return;
     }
 
-    //std::cout << "bytesRead: " <<bytesRead << "\n";
+	// Read number of padding bits from end of the file
+	inFile.seekg(-1, std::ios::end);
+	char* lastByte = new char[1];
+	inFile.read(lastByte, 1);
+	int paddingBits = 0;
+	//inFile >> paddingBits;
+	for (int i = 0; i < 8; i++)
+	{
+		auto bit = (lastByte[0] >> i) & 1;
+		//std::cout << "bit: " << bit << std::endl;
+		if (bit == 1)
+		{
+			paddingBits += std::pow(2, i);
+		}
+	}
+
+    std::cout << "padding bits: " << paddingBits << "\n";
 
     std::ofstream outfile;
     outfile.open(outFilePath, std::ios::out | std::ios::binary);
 
     std::stack<std::shared_ptr<TreeNode>> nodeStack;
     std::streampos maxReadSize = 2048;
-    std::streampos fileSize = inFile.tellg() - bytesRead;
+    std::streampos fileSize = inFile.tellg() - bytesRead - sizeof(uint8_t);
     inFile.seekg(bytesRead, std::ios::beg);
 
     std::streampos totalBytesRead = 0;
+	int bitsToRead = fileSize * 8 - paddingBits;
     std::shared_ptr<TreeNode> curNode = root;
     //std::vector<unsigned char> memblock;
     while (totalBytesRead < fileSize)
@@ -161,12 +180,14 @@ void Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
         inFile.read(memblock, readChunkSize);
         totalBytesRead += readChunkSize;
 
-        // write each byte to file
+        // read each byte and decode to file
         for (int i = 0; i < readChunkSize; i++)
         {
             //std::cout << "Processing byte\n";
-            for (int j = 7; j >= 0; j--)
+            for (int j = 7; j >= 0 && bitsToRead > 0; j--)
             {
+				--bitsToRead;
+
 				auto bit = (memblock[i] >> j) & 1;
 				//std::cout << "bit: " << bit << std::endl;
 				if (bit == 0 && curNode->left != nullptr)

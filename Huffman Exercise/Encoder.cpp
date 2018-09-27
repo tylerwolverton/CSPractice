@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdint>
 
 bool Encoder::Encode(std::string inFilePath, std::string outFilePath) 
 {
@@ -262,9 +263,9 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
 
     std::streampos totalBytesRead = 0;
     char byteToWrite = 0;
-    int bitsRead = 0;
+	uint8_t bitsRead = 0;
     // TODO: Support variable byte size
-    const int BIT_COUNT = 8;
+    const uint8_t BIT_COUNT = 8;
     while (totalBytesRead < fileSize)
     {
         std::streampos readChunkSize = maxReadSize;
@@ -311,14 +312,25 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     // Write out any remaining bits
     if (bitsRead != 0)
     {
-        for (int i = 0; i < BIT_COUNT - bitsRead; i++)
+		char paddingBits = BIT_COUNT - bitsRead;
+		//std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
+        for (int i = 0; i < paddingBits; i++)
         {
+			std::cout << "byte\n";
             byteToWrite <<= 1;
         }
 		//std::cout << "remaining byteToWrite: " << byteToWrite << std::endl;
     
         outfile.write(&byteToWrite, 1);
+
+		// Write number of padding bits to be removed in decode
+		outfile.write(&paddingBits, 1);
     }
+	// No padding bits to ignore during decode
+	else
+	{
+		outfile.write(reinterpret_cast<const char*>(&bitsRead), sizeof(uint8_t));
+	}
     
     inFile.close();
     outfile.close();
