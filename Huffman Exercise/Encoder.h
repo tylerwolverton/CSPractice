@@ -2,10 +2,9 @@
 #include <unordered_map>
 #include <memory>
 
-//class TreeNode;
-
 class Encoder {
 public:
+	// Since no state can be shared between runs of encode, make it static
 	static bool Encode(std::string inFilePath, std::string outFilePath);
 
 private:

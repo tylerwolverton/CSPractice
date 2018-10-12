@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <climits>
 
 bool Encoder::Encode(std::string inFilePath, std::string outFilePath) 
 {
@@ -16,8 +17,8 @@ bool Encoder::Encode(std::string inFilePath, std::string outFilePath)
 	}
 
 	// assign bit sequence to each char  
-        // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars from this point on
-        // build tree                               time: O((n^2)/2) space: O((n^2)/2)
+        // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars (256) from this point on
+        // build tree                               time: O((n^2)/2) space: O(n^2)
 	std::cout << "Building Frequency Tree\n";
     std::shared_ptr<TreeNode> root = buildFrequencyTree(freqTable);
 
@@ -58,31 +59,25 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
     std::streampos maxReadSize = 2048;
     std::streampos fileSize = inFile.tellg();
 
-	if (fileSize < 2)
+	if (fileSize < 1)
 	{
-		std::cout << "File is too small to benefit from compression\n";
+		std::cout << "File is empty\n";
 		return nullptr;
 	}
 
     inFile.seekg(0, std::ios::beg);
 
 	std::streampos totalBytesRead = 0;
-    //std::vector<unsigned char> memblock;
 	while (totalBytesRead < fileSize)
 	{
-		//std::cout << "Processing chunk\n";
         std::streampos readChunkSize = maxReadSize;
 		if (fileSize - totalBytesRead < readChunkSize)
 		{
             readChunkSize = fileSize - totalBytesRead;
 		}
 		
-        //std::vector<unsigned char> memblock;
-        //memblock.reserve(readChunkSize);
         char* memblock = new char[readChunkSize];
         inFile.read(memblock, readChunkSize);
-        //inFile.read((char*)(&(memblock.front())), readChunkSize);
-        //memblock.resize(inFile.gcount());
         totalBytesRead += readChunkSize;
 
         // build frequency table for each byte
@@ -91,19 +86,16 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
             auto it = freqTable->find(memblock[i]);
             if (it == freqTable->end())
             {
-                //std::cout << "New byte\n";
                 FrequencyNode node(1, "");
                 freqTable->emplace(memblock[i], node);
             }
             else
             {
-                //std::cout << "Update count\n";
                 it->second.count++;
             }
 		}
 
         delete[] memblock;
-		//memblock.clear();
 	}
 
 	inFile.close();
@@ -117,30 +109,23 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
     std::list<std::shared_ptr<TreeNode>> nodeList;
     for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
-		//std::cout << "Pushing node\n";
         nodeList.push_back(std::make_shared<TreeNode>(it->first, it->second.count));
     }
 
-    // build tree                               time: O((n^2)/2) space: O((n^2)/2)
-    // array - can calculate total number of
-    // nodes needed and start filling up array
-    // from the end
+    // build tree                               time: O((n^2)/2) space: O(n^2)
     while (nodeList.size() > 1)
     {
-		//std::cout << "Noodles: " << nodeList.size() <<std::endl;
-        int min = 99999998;
-        int secondMin = 99999999;
+        int min = INT_MAX - 1;
+        int secondMin = INT_MAX;
         std::shared_ptr<TreeNode> minNode = nullptr, secondMinNode = nullptr;
 
         for (auto node : nodeList)
         {
             if (node->frequency < min)
             {
-				//std::cout << "Updating min node: " << node->frequency << std::endl;
 				// Update second min node to be the current min
 				if (minNode != nullptr)
 				{
-					//std::cout << "Updating second min node: " << minNode->frequency << std::endl;
 					secondMin = minNode->frequency;
 					secondMinNode = minNode;
 				}
@@ -151,7 +136,6 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
             }
 			else if (node->frequency < secondMin)
 			{
-				//std::cout << "Updating second min node: " << node->frequency << std::endl;
 				secondMin = node->frequency;
 				secondMinNode = node;
 			}
@@ -257,7 +241,6 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     std::streampos totalBytesRead = 0;
     char byteToWrite = 0;
 	uint8_t bitsRead = 0;
-    // TODO: Support variable byte size
     const uint8_t BIT_COUNT = 8;
     while (totalBytesRead < fileSize)
     {
@@ -268,12 +251,10 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         }
 
         char* memblock = new char[readChunkSize];
-        //std::vector<unsigned char> memblock;
-        //memblock.resize(readChunkSize);
         inFile.read(memblock, readChunkSize);
         totalBytesRead += readChunkSize;
 
-        // write each bit to file in 1 byte chunks
+        // Write each bit to file in 1 byte chunks
         for (int i = 0; i < readChunkSize; i++)
         {
             auto it = freqTable->find(memblock[i]);
