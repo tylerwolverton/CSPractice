@@ -8,17 +8,18 @@
 
 bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
 {
-    // Build tree from file
-        // Read in tree from file
+    // build tree from file
+        // read in tree from file
 	std::cout << "Decoding Tree from File\n";
     std::shared_ptr<TreeNode> root = std::make_shared<TreeNode>('!');
     std::streampos bytesRead = buildDataTree(inFilePath, root);
 	if ((int)bytesRead == 0)
 	{
+		std::cout << "Didn't read any tree bytes in file\n";
 		return false;
 	}
 
-    // Read the remainder of the file and build output file
+    // read the remainder of the file and build output file
 	std::cout << "Decoding Remainder of File\n";
 	if (!buildOutputFile(inFilePath, outFilePath, root, bytesRead))
 	{
@@ -36,7 +37,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 
     if (!inFile.is_open())
     {
-        std::cout << "File isn't open\n";
+		std::cout << "Input file couldn't be opened\n";
         return 0;
     }
 
@@ -67,7 +68,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
         {
 			treeBytes++;
 
-			// Handle continuation of last chunk
+			// handle continuation of last chunk
 			if (seenPrev0)
 			{
 				nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
@@ -75,22 +76,22 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 				continue;
 			}
 
-            // Leaf node seen
+            // leaf node seen
             if (memblock[i] == 'L')
             {
-				// Handle last byte in chunk
+				// handle last byte in chunk
 				if (i + 1 == readChunkSize)
 				{
 					seenPrev0 = true;
 					break;
 				}
 
-				// Save leaf node
+				// save leaf node
 				i++;
 				treeBytes++;
 				nodeStack.push(std::make_shared<TreeNode>(memblock[i]));
             }
-			// Internal node seen
+			// internal node seen
 			else if (memblock[i] == 'I')
 			{
 				auto node1 = nodeStack.top();
@@ -101,13 +102,13 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
 			}
 			else if (memblock[i] == '!')
 			{
-				// End of tree seen
+				// end of tree seen
 				breakWhile = true;
 				break;
 			}
             else
             {
-				std::cout << "Unknown byte sequence in tree.\n";
+				std::cout << "Unknown byte sequence in tree\n";
             }
         }
 
@@ -125,11 +126,11 @@ bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
 
     if (!inFile.is_open())
     {
-        std::cout << "File isn't open\n";
+		std::cout << "Input file couldn't be opened\n";
         return false;
     }
 
-	// Read number of padding bits from end of the file
+	// read number of padding bits from end of the file
 	inFile.seekg(-1, std::ios::end);
 	char* lastByte = new char[1];
 	inFile.read(lastByte, 1);
@@ -152,7 +153,6 @@ bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
     inFile.seekg(bytesRead, std::ios::beg);
 
     std::streampos totalBytesRead = 0;
-	long long bitsToRead = fileSize * 8 - paddingBits;
     std::shared_ptr<TreeNode> curNode = root;
     while (totalBytesRead < fileSize)
     {
@@ -169,10 +169,17 @@ bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
         // read each byte and decode to file
         for (int i = 0; i < readChunkSize; i++)
         {
-            for (int j = 7; j >= 0 && bitsToRead > 0; j--)
-            {
-				--bitsToRead;
+			int lastBitToReadPos = 0;
+			// check if this is the last byte and account for padding bits
+			if (totalBytesRead >= fileSize
+				&& i == ((int)readChunkSize - 1)
+				&& paddingBits != 0)
+			{
+				lastBitToReadPos = paddingBits;
+			}
 
+            for (int j = 7; j >= lastBitToReadPos; j--)
+            {
 				auto bit = (memblock[i] >> j) & 1;
 				if (bit == 0 && curNode->left != nullptr)
                 {

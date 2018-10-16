@@ -7,7 +7,7 @@
 
 bool Encoder::Encode(std::string inFilePath, std::string outFilePath) 
 {
-    // build frequency table for each byte          hash table: time: O(n) space: O(n)
+    // build frequency table for each byte
     std::cout << "Building Frequency Table\n";
 	FreqTablePtr freqTable = buildFrequencyTable(inFilePath);
 
@@ -16,24 +16,23 @@ bool Encoder::Encode(std::string inFilePath, std::string outFilePath)
 		return false;
 	}
 
-	// assign bit sequence to each char  
-        // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars (256) from this point on
-        // build tree                               time: O((n^2)/2) space: O(n^2)
+	// assign bit sequence to each char              
 	std::cout << "Building Frequency Tree\n";
     std::shared_ptr<TreeNode> root = buildFrequencyTree(freqTable);
 
-	// store the bit representation of each leaf    hash table: time O(nlogn) space: none if reuse frequency table
+	// store the bit representation of each leaf
+	// hash table: time O(nlogn) space: none (reuse frequency table)
 	std::cout << "Saving Bit Representations\n";
     saveBitReps(root, "", freqTable);
 
-	// write tree into start of file                time: O((n^2)/2)
+	// write tree into start of file
 	std::cout << "Writing Tree to File\n";
 	if (!writeTreeToFile(root, outFilePath))
 	{
 		return false;
 	}
 
-	// write out compressed bits to new file        time: O(n)
+	// write out compressed bits to new file
 	std::cout << "Writing Bits to File\n";
 	if (!writeDataToFile(inFilePath, outFilePath, freqTable))
 	{
@@ -51,7 +50,7 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
 
 	if (!inFile.is_open())
 	{
-        std::cout << "File isn't open\n";
+		std::cout << "Input file couldn't be opened\n";
 		return nullptr;
 	}
 
@@ -105,14 +104,16 @@ Encoder::FreqTablePtr Encoder::buildFrequencyTable(std::string inFilePath)
 
 std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freqTable)
 {
-    // create leaf nodes                        list: time O(n) space O(n)  maximum for n is number of possible chars
+    // create leaf nodes            
+    // list: time O(n) space O(n) - maximum for n is number of possible chars (256)
     std::list<std::shared_ptr<TreeNode>> nodeList;
     for (auto it = freqTable->begin(); it != freqTable->end(); ++it)
     {
         nodeList.push_back(std::make_shared<TreeNode>(it->first, it->second.count));
     }
 
-    // build tree                               time: O((n^2)/2) space: O(n^2)
+    // build tree 
+	// time: O((n ^ 2) / 2) space : O(n ^ 2)
     while (nodeList.size() > 1)
     {
         int min = INT_MAX - 1;
@@ -123,14 +124,14 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
         {
             if (node->frequency < min)
             {
-				// Update second min node to be the current min
+				// update second min node to be the current min
 				if (minNode != nullptr)
 				{
 					secondMin = minNode->frequency;
 					secondMinNode = minNode;
 				}
 
-				// Save the new min
+				// save the new min
                 min = node->frequency;
                 minNode = node;
             }
@@ -141,6 +142,7 @@ std::shared_ptr<Encoder::TreeNode> Encoder::buildFrequencyTree(FreqTablePtr freq
 			}
         }
 
+		// make a new internal node with '\0' as the char value
         nodeList.push_back(std::make_shared<TreeNode>('\0', minNode->frequency + secondMinNode->frequency, minNode, secondMinNode));
         nodeList.remove(minNode);
         nodeList.remove(secondMinNode);
@@ -155,7 +157,7 @@ void Encoder::saveBitReps(std::shared_ptr<TreeNode> node, std::string bitStr, Fr
         && node->right == nullptr)
     {
         auto it = freqTable->find(node->byteVal);
-		// If only 1 node is in the list, set its value to 0
+		// if only 1 node is in the list, set its value to 0
 		if (bitStr == "")
 		{
 			it->second.bitRep = "0";
@@ -189,10 +191,12 @@ bool Encoder::writeTreeToFile(std::shared_ptr<TreeNode> node, std::string outFil
     if (outfile.is_open())
     {
         outfile.write((*treeStrPtr).c_str(), (*treeStrPtr).size());
+		// write marker for end of tree
         outfile.write("!", sizeof("!"));
 		return true;
     }
 
+	std::cout << "Output file couldn't be opened\n";
     return false;
 }
 
@@ -207,6 +211,7 @@ void Encoder::buildTreeString(std::shared_ptr<TreeNode> node, std::shared_ptr<st
         buildTreeString(node->right, treeStrPtr);
     }
 
+	// check for internal node marker '\0'
     if (node->byteVal == '\0' 
 		&& (node->left != nullptr
 		|| node->right != nullptr))
@@ -227,7 +232,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
 
     if (!inFile.is_open())
     {
-        std::cout << "File isn't open\n";
+        std::cout << "Input file couldn't be opened\n";
         return false;
     }
 
@@ -254,7 +259,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         inFile.read(memblock, readChunkSize);
         totalBytesRead += readChunkSize;
 
-        // Write each bit to file in 1 byte chunks
+        // write each bit to file in 1 byte chunks
         for (int i = 0; i < readChunkSize; i++)
         {
             auto it = freqTable->find(memblock[i]);
@@ -280,7 +285,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
         delete[] memblock;
     }
 
-    // Write out any remaining bits
+    // write out any remaining bits
     if (bitsRead != 0)
     {
 		char paddingBits = BIT_COUNT - bitsRead;
@@ -291,10 +296,10 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     
         outfile.write(&byteToWrite, 1);
 
-		// Write number of padding bits to be removed in decode
+		// write number of padding bits to be removed in decode
 		outfile.write(&paddingBits, 1);
     }
-	// No padding bits to ignore during decode
+	// no padding bits to ignore during decode
 	else
 	{
 		outfile.write(reinterpret_cast<const char*>(&bitsRead), sizeof(uint8_t));
@@ -306,6 +311,7 @@ bool Encoder::writeDataToFile(std::string inFilePath, std::string outFilePath, F
     return true;
 }
 
+// debug method to print the encoding tree
 void Encoder::printTree(std::shared_ptr<TreeNode> root, int depth)
 {
     if (root == nullptr)

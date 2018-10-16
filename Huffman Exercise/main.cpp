@@ -19,7 +19,14 @@ int main(int argc, char* argv[])
 
 		if (Encoder::Encode(inFile, tempFile))
 		{
-			Decoder::Decode(tempFile, outFile);
+			if (!Decoder::Decode(tempFile, outFile))
+			{
+				std::cout << "Decoding Error\n";
+			}
+		}
+		else
+		{
+			std::cout << "Encoding Error\n";
 		}
 	}
 	else if (argc == 4)
@@ -30,11 +37,17 @@ int main(int argc, char* argv[])
 
 		if (mode == "e")
 		{
-			Encoder::Encode(inFile, outFile);
+			if (!Encoder::Encode(inFile, outFile))
+			{
+				std::cout << "Encoding Error\n";
+			}
 		}
 		else if (mode == "d")
 		{
-			Decoder::Decode(inFile, outFile);
+			if (!Decoder::Decode(inFile, outFile))
+			{
+				std::cout << "Decoding Error\n";
+			}
 		}
 		else
 		{
