@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cmath>
 
-bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
+bool Decoder::Decode(const std::string& inFilePath, const std::string& outFilePath)
 {
     // build tree from file
         // read in tree from file
@@ -30,7 +30,7 @@ bool Decoder::Decode(std::string inFilePath, std::string outFilePath)
     return true;
 }
 
-int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::TreeNode> root)
+int Decoder::buildDataTree(const std::string& inFilePath, const std::shared_ptr<Decoder::TreeNode>& root)
 {
     // read file into memory
     std::ifstream inFile(inFilePath, std::ios::binary | std::ios::ate);
@@ -120,7 +120,7 @@ int Decoder::buildDataTree(std::string inFilePath, std::shared_ptr<Decoder::Tree
     return treeBytes + 1;
 }
 
-bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, std::shared_ptr<Decoder::TreeNode> root, std::streampos bytesRead)
+bool Decoder::buildOutputFile(const std::string& inFilePath, const std::string& outFilePath, const std::shared_ptr<Decoder::TreeNode>& root, std::streampos bytesRead)
 {
     std::ifstream inFile(inFilePath, std::ios::binary | std::ios::ate);
 
@@ -205,7 +205,7 @@ bool Decoder::buildOutputFile(std::string inFilePath, std::string outFilePath, s
 	return true;
 }
 
-void Decoder::printTree(std::shared_ptr<Decoder::TreeNode> root)
+void Decoder::printTree(const std::shared_ptr<Decoder::TreeNode>& root)
 {
     if (root == nullptr)
         return;
