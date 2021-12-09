@@ -140,6 +140,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AdventOfCode.cpp" />
+    <ClCompile Include="BingoSolver.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BingoSolver.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

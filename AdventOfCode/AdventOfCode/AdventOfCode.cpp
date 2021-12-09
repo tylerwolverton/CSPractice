@@ -1,6 +1,8 @@
 // AdventOfCode.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
+#include "BingoSolver.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -2116,7 +2118,6 @@ int SolvePuzzle4()
 	return forwardDist * depth;
 }
 
-
 int SolvePuzzle5()
 {
 	int num1sInEachColumn[12] = { 0 };
@@ -2166,7 +2167,6 @@ int SolvePuzzle5()
 
 	return gammaRate * epsilonValue;
 }
-
 
 int SolvePuzzle6()
 {
@@ -2310,6 +2310,10 @@ int main()
     std::cout << "Puzzle 4: " << SolvePuzzle4() << "\n";
     std::cout << "Puzzle 5: " << SolvePuzzle5() << "\n";
     std::cout << "Puzzle 6: " << SolvePuzzle6() << "\n";
+
+	BingoSolver bingoSolver;
+	bingoSolver.InitializeFromFile("../Input/Day4.txt");
+    //std::cout << "Puzzle 7: " << SolvePuzzle6() << "\n";
 }
 
 

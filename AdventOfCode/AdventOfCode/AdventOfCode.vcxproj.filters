@@ -18,5 +18,13 @@
     <ClCompile Include="AdventOfCode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BingoSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BingoSolver.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
