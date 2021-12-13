@@ -10,6 +10,9 @@ public:
 
 private:
 	bool CheckForWin();
+	int GetRow(int index);
+	int GetColumn(int index);
+	int GetDiagonal(int index);
 
 private:
 	std::vector<int> numbers;
@@ -23,6 +26,8 @@ class BingoSolver
 {
 public:
 	void InitializeFromFile( const char* filename );
+
+	int Solve();
 
 private:
 	std::vector<BingoCard5x5> m_bingoCards;

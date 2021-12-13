@@ -14,6 +14,15 @@ BingoCard5x5::BingoCard5x5(const std::vector<int>& boardNumbers)
 
 bool BingoCard5x5::MarkNumber(int newNumber)
 {
+	for (int numIdx = 0; numIdx < (int)numbers.size(); ++numIdx)
+	{
+		if (numbers[numIdx] == newNumber)
+		{
+			isNumberMarked[numIdx] = true;
+			return CheckForWin();
+		}
+	}
+
 	return false;
 }
 
@@ -22,22 +31,41 @@ bool BingoCard5x5::CheckForWin()
 	return false;
 }
 
+int BingoCard5x5::GetRow(int index)
+{
+
+}
+
+int BingoCard5x5::GetColumn(int index)
+{
+
+}
+
+int BingoCard5x5::GetDiagonal(int index)
+{
+
+}
+
 void BingoSolver::InitializeFromFile(const char* filename)
 {
 	std::ifstream inStream(filename);
 
 	// Read off first 2 lines to get to boards
 	std::string line;
-	inStream.getline(line);
-	inStream.getline(line);
-
 	
-	while (!inStream.eof())
+	int precedingLines = 2;
+	int curLine = 0;
+	while (getline(inStream,line))
 	{
+		// Ignore first 2 lines to get to boards
+		if (curLine < precedingLines)
+		{
+			++curLine;
+			continue;
+		}
 		std::vector<int> boardNums;
 		for (int rowNum = 0; rowNum < 5; ++rowNum)
 		{
-			inStream.getline(line);
 			std::istringstream iss(line);
 			int a, b, c, d, e;
 			iss >> a >> b >> c >> d >> e;
@@ -46,13 +74,32 @@ void BingoSolver::InitializeFromFile(const char* filename)
 			boardNums.push_back(c);
 			boardNums.push_back(d);
 			boardNums.push_back(e);
+
+			getline(inStream, line);
 		}
 
 		m_bingoCards.emplace_back(boardNums);
 
 		// empty line
-		inStream.getline(line, 256);
+		getline(inStream, line);
 	}
 
 	inStream.close();
+}
+
+int BingoSolver::Solve()
+{
+	for (int calledNumIdx = 0; calledNumIdx < calledNumbersLen; ++calledNumIdx)
+	{
+		for (int cardIdx = 0; cardIdx < (int)m_bingoCards.size(); ++cardIdx)
+		{
+			if ( m_bingoCards[cardIdx].MarkNumber(calledNumbers[calledNumIdx]) )
+			{
+				return 1;
+			}
+		}
+	}
+
+	// Didn't find a match
+	return -1;
 }
