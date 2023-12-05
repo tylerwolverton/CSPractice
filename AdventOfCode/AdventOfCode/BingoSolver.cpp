@@ -31,20 +31,20 @@ bool BingoCard5x5::CheckForWin()
 	return false;
 }
 
-int BingoCard5x5::GetRow(int index)
-{
-
-}
-
-int BingoCard5x5::GetColumn(int index)
-{
-
-}
-
-int BingoCard5x5::GetDiagonal(int index)
-{
-
-}
+//int BingoCard5x5::GetRow(int index)
+//{
+//
+//}
+//
+//int BingoCard5x5::GetColumn(int index)
+//{
+//
+//}
+//
+//int BingoCard5x5::GetDiagonal(int index)
+//{
+//
+//}
 
 void BingoSolver::InitializeFromFile(const char* filename)
 {

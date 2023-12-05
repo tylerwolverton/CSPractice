@@ -6,3 +6,16 @@ AdventOfCode/AdventOfCode/x64/Debug/AdventOfCode.tlog/link.write.1.tlog
 *.log
 *.pdb
 *.idb
+*.vsidx
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+*.obj
+*.ilk
+*.enc
+*.recipe
+*.ilk
+*.obj
+AdventOfCode/AdventOfCode/x64/Debug/AdventOfCode.obj
+AdventOfCode/AdventOfCode/x64/Debug/BingoSolver.obj

@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31729.503
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AdventOfCode", "AdventOfCode\AdventOfCode.vcxproj", "{6CCC1EBD-FD37-4899-8212-01E745D96D6E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AdventOfCode2022", "AdventOfCode2022\AdventOfCode2022.vcxproj", "{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AdventOfCode2023", "AdventOfCode2023\AdventOfCode2023.vcxproj", "{6DE696DC-5208-4A19-96C4-410B2540848A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,22 @@ Global
 		{6CCC1EBD-FD37-4899-8212-01E745D96D6E}.Release|x64.Build.0 = Release|x64
 		{6CCC1EBD-FD37-4899-8212-01E745D96D6E}.Release|x86.ActiveCfg = Release|Win32
 		{6CCC1EBD-FD37-4899-8212-01E745D96D6E}.Release|x86.Build.0 = Release|Win32
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Debug|x64.ActiveCfg = Debug|x64
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Debug|x64.Build.0 = Debug|x64
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Debug|x86.ActiveCfg = Debug|Win32
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Debug|x86.Build.0 = Debug|Win32
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Release|x64.ActiveCfg = Release|x64
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Release|x64.Build.0 = Release|x64
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Release|x86.ActiveCfg = Release|Win32
+		{D9A87F08-1ED1-4BEE-AEC7-FF23B7B2A2AC}.Release|x86.Build.0 = Release|Win32
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Debug|x64.ActiveCfg = Debug|x64
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Debug|x64.Build.0 = Debug|x64
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Debug|x86.ActiveCfg = Debug|Win32
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Debug|x86.Build.0 = Debug|Win32
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Release|x64.ActiveCfg = Release|x64
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Release|x64.Build.0 = Release|x64
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Release|x86.ActiveCfg = Release|Win32
+		{6DE696DC-5208-4A19-96C4-410B2540848A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
